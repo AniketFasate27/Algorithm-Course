@@ -41,7 +41,7 @@ NS_LOG_COMPONENT_DEFINE("ThirdScriptExample");
 int
 main(int argc, char* argv[])
 {
-    // bool verbose = true;
+    bool verbose = true;
     // uint32_t nCsma = 3;
     uint32_t nWifi = 5;
     bool tracing = true;
@@ -49,7 +49,7 @@ main(int argc, char* argv[])
     CommandLine cmd(__FILE__);
     // cmd.AddValue("nCsma", "Number of \"extra\" CSMA nodes/devices", nCsma);
     // cmd.AddValue("nWifi", "Number of wifi STA devices", nWifi);
-    // cmd.AddValue("verbose", "Tell echo applications to log if true", verbose);
+    cmd.AddValue("verbose", "Tell echo applications to log if true", verbose);
     cmd.AddValue("tracing", "Enable pcap tracing", tracing);
 
     cmd.Parse(argc, argv);
@@ -64,11 +64,11 @@ main(int argc, char* argv[])
         return 1;
     }
 
-    // if (verbose)
-    // {
-    //     LogComponentEnable("UdpEchoClientApplication", LOG_LEVEL_INFO);
-    //     LogComponentEnable("UdpEchoServerApplication", LOG_LEVEL_INFO);
-    // }
+    if (verbose)
+    {
+        LogComponentEnable("UdpEchoClientApplication", LOG_LEVEL_INFO);
+        LogComponentEnable("UdpEchoServerApplication", LOG_LEVEL_INFO);
+    }
 
     // NodeContainer p2pNodes;
     // p2pNodes.Create(2);

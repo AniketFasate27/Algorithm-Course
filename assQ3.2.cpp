@@ -21,7 +21,7 @@
 #include "ns3/network-module.h"
 #include "ns3/point-to-point-module.h"
 #include "ns3/ssid.h"
-#include "ns3/yans-wifi-helper.h"
+#include "ns3/yans-wifi-helper.//h"
 
 // Default Network Topology
 //
@@ -32,7 +32,7 @@
 // n5   n6   n7   n0 -------------- n1   n2   n3   n4
 //                   point-to-point  |    |    |    |
 //                                   ================
-  //                                     LAN 10.1.2.0
+//                                     LAN 10.1.2.0
 
 using namespace ns3;
 
@@ -44,11 +44,11 @@ main(int argc, char* argv[])
     // bool verbose = true;
     // uint32_t nCsma = 3;
     uint32_t nWifi = 5;
-    bool tracing = true;
+    bool tracing = false;
 
     CommandLine cmd(__FILE__);
     // cmd.AddValue("nCsma", "Number of \"extra\" CSMA nodes/devices", nCsma);
-    // cmd.AddValue("nWifi", "Number of wifi STA devices", nWifi);
+    cmd.AddValue("nWifi", "Number of wifi STA devices", nWifi);
     // cmd.AddValue("verbose", "Tell echo applications to log if true", verbose);
     cmd.AddValue("tracing", "Enable pcap tracing", tracing);
 
@@ -71,7 +71,7 @@ main(int argc, char* argv[])
     // }
 
     // NodeContainer p2pNodes;
-    // p2pNodes.Create(2);
+    // p2pNodes.Create(1);
 
     // PointToPointHelper pointToPoint;
     // pointToPoint.SetDeviceAttribute("DataRate", StringValue("5Mbps"));
@@ -91,9 +91,11 @@ main(int argc, char* argv[])
     // NetDeviceContainer csmaDevices;
     // csmaDevices = csma.Install(csmaNodes);
 
-    NodeContainer WiFiNodes;
-    WiFiNodes.Create(nWifi);
-    // wifiStaNodes.Create(nWifi);
+    NodeContainer APwifiNode;
+    APwifiNode.Create(1);
+
+    NodeContainer wifistaNodes;
+    wifistaNodes.Create(nWifi);
     // NodeContainer wifiApNode = p2pNodes.Get(0);
 
     YansWifiChannelHelper channel = YansWifiChannelHelper::Default();
@@ -101,21 +103,17 @@ main(int argc, char* argv[])
     phy.SetChannel(channel.Create());
 
     WifiMacHelper mac;
-    
+    Ssid ssid = Ssid("EECE5155");
 
     WifiHelper wifi;
-    NetDeviceContainer WiFiDevices;
-    // mac.SetType("ns3::AdhocWifiMac", "Ssid", SsidValue(ssid), "ActiveProbing", BooleanValue(false));
-    mac.SetType("ns3::AdhocWifiMac");
-    WiFiDevices = wifi.Install(phy, mac, WiFiNodes);
 
-    // NetDeviceContainer staDevices;
-    // mac.SetType("ns3::StaWifiMac", "Ssid", SsidValue(ssid), "ActiveProbing", BooleanValue(false));
-    // staDevices = wifi.Install(phy, mac, wifiNodes);
+    NetDeviceContainer staDevices;
+    mac.SetType("ns3::StaWifiMac", "Ssid", SsidValue(ssid), "ActiveProbing", BooleanValue(false));
+    staDevices = wifi.Install(phy, mac, wifistaNodes);
 
-    // NetDeviceContainer apDevices;
-    // mac.SetType("ns3::ApWifiMac", "Ssid", SsidValue(ssid));
-    // apDevices = wifi.Install(phy, mac, wifiNode);
+    NetDeviceContainer apDevices;
+    mac.SetType("ns3::ApWifiMac", "Ssid", SsidValue(ssid));
+    apDevices = wifi.Install(phy, mac, APwifiNode);
 
     MobilityHelper mobility;
 
@@ -136,51 +134,58 @@ main(int argc, char* argv[])
     mobility.SetMobilityModel("ns3::RandomWalk2dMobilityModel",
                               "Bounds",
                               RectangleValue(Rectangle(-90, 90, -90, 90)));
-    mobility.Install(WiFiNodes);
+    mobility.Install(wifistaNodes);
 
-    
     // mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
     // mobility.Install(wifiApNode);
 
     InternetStackHelper stack;
     // stack.Install(csmaNodes);
-    // stack.Install(WiFiNode);
-    // stack.Install(wifiStaNodes);
-    stack.Install(WiFiNodes);
+    stack.Install(APwifiNode);
+    stack.Install(wifistaNodes);
 
     Ipv4AddressHelper address;
 
-    // address.SetBase("10.1.1.0", "255.255.255.0");
-    // Ipv4InterfaceContainer p2pInterfaces;
-    // p2pInterfaces = address.Assign(p2pDevices);
+    address.SetBase("192.168.2.0", "255.255.255.0");
+    Ipv4InterfaceContainer staInterfaces;
+    staInterfaces = address.Assign(staDevices);
+    Ipv4InterfaceContainer APInterfaces;
+    APInterfaces = address.Assign(apDevices);
+    
+
 
     // address.SetBase("10.1.2.0", "255.255.255.0");
     // Ipv4InterfaceContainer csmaInterfaces;
     // csmaInterfaces = address.Assign(csmaDevices);
 
-    address.SetBase("192.168.1.0", "255.255.255.0");
-    Ipv4InterfaceContainer WiFiInterfaces;
-    WiFiInterfaces = address.Assign(WiFiDevices);
+    // address.SetBase("192.168.2.0", "255.255.255.0");
+    // address.Assign(staDevices);
     // address.Assign(apDevices);
 
-    UdpEchoServerHelper echoServer(20);
+    UdpEchoServerHelper echoServer(21);
 
-    ApplicationContainer serverApps = echoServer.Install(WiFiNodes.Get(0));
+    ApplicationContainer serverApps = echoServer.Install(wifistaNodes.Get(0));
     serverApps.Start(Seconds(1.0));
     serverApps.Stop(Seconds(10.0));
 
-    UdpEchoClientHelper echoClient(WiFiInterfaces.GetAddress(0), 20);
-    echoClient.SetAttribute("MaxPackets", UintegerValue(2));
-    echoClient.SetAttribute("Interval", TimeValue(Seconds(1.0)));
-    echoClient.SetAttribute("PacketSize", UintegerValue(512));
+    UdpEchoClientHelper echoClient1(staInterfaces.GetAddress(0), 21);
+    echoClient1.SetAttribute("MaxPackets", UintegerValue(2));
+    echoClient1.SetAttribute("Interval", TimeValue(Seconds(2.0)));
+    echoClient1.SetAttribute("PacketSize", UintegerValue(512));
+    ApplicationContainer clientApps3 = echoClient1.Install(wifistaNodes.Get(3));
+    clientApps3.Start(Seconds(3.0));
+    clientApps3.Stop(Seconds(5.0));
 
-    ApplicationContainer clientApps1 = echoClient.Install(WiFiNodes.Get(3));
-    clientApps1.Start(Seconds(1.0));
-    clientApps1.Stop(Seconds(3.0));
+    UdpEchoClientHelper echoClient2(staInterfaces.GetAddress(0), 21);
+    echoClient2.SetAttribute("MaxPackets", UintegerValue(2));
+    echoClient2.SetAttribute("Interval", TimeValue(Seconds(2.0)));
+    echoClient2.SetAttribute("PacketSize", UintegerValue(512));
+    
+    ApplicationContainer clientApps4 = echoClient2.Install(wifistaNodes.Get(4));
+    clientApps4.Start(Seconds(2.0));
+    clientApps4.Stop(Seconds(5.0));
 
-    ApplicationContainer clientApps2 = echoClient.Install(WiFiNodes.Get(4));
-    clientApps2.Start(Seconds(2.0));
-    clientApps2.Stop(Seconds(6.0));
+
 
     Ipv4GlobalRoutingHelper::PopulateRoutingTables();
 
@@ -190,7 +195,8 @@ main(int argc, char* argv[])
     {
         phy.SetPcapDataLinkType(WifiPhyHelper::DLT_IEEE802_11_RADIO);
         // pointToPoint.EnablePcapAll("third");
-        phy.EnablePcap("third", WiFiDevices.Get(1));
+        phy.EnablePcap("third", staDevices.Get(4));
+        phy.EnablePcap("third", apDevices.Get(0));
 
         // csma.EnablePcap("third", csmaDevices.Get(0), true);
     }
