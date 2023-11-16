@@ -58,14 +58,14 @@ main(int argc, char* argv[])
     NetDeviceContainer WiFiDevices;
     mac.SetType("ns3::AdhocWifiMac");
     WiFiDevices = wifi.Install(phy, mac, WiFiNodes);
-
+    mac.SetType("ns3::AdhocWifiMac", "RtsCtsThreshold", UintegerValue(1000),"ShortGuardEnabled", BooleanValue(true));
 
     MobilityHelper mobility;
 
     mobility.SetPositionAllocator("ns3::GridPositionAllocator",
                                   "MinX",
                                   DoubleValue(0.0),
-                                  "MinY",
+               "ShortGuardEnabled", BooleanValue(true)                   "MinY",
                                   DoubleValue(0.0),
                                   "DeltaX",
                                   DoubleValue(5.0),
@@ -82,8 +82,8 @@ main(int argc, char* argv[])
     mobility.Install(WiFiNodes);
 
     
-    mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
-    mobility.Install(WiFiNodes);
+    //mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
+    //mobility.Install(WiFiNodes);
 
     InternetStackHelper stack;
     stack.Install(WiFiNodes);
