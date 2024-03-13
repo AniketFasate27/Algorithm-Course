@@ -1,0 +1,15 @@
+function recursive_insertion_sort(A, n):
+    if n <= 1: #here we are checking that size of the subarray 'n'is less than or equal to 1. 
+        return  
+    
+    recursive_insertion_sort(A, n-1) # heer we are calls the function recusivelly  
+    
+    
+    key = A[n]
+    j = n - 1
+    while j >= 1 and A[j] > key:
+        A[j + 1] = A[j]
+        j = j - 1
+    A[j + 1] = key
+# above script run for inserting A[n] into its correct position within the sorted subarray A[1:n-1]
+
